@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore default dependence, model calibration and single-name concentration in a finite credit portfolio.">
+  <title>Bank StressLab | Portfolio risk explorer</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="#main"><span class="brand-mark" aria-hidden="true">▥</span> Bank StressLab</a>
+      <nav aria-label="Dashboard sections">
+        <a href="#feasibility">Feasibility</a>
+        <a href="#calibration">Calibration</a>
+        <a href="#concentration">Concentration</a>
+        <a href="../reports/sensitivity.md">Technical report</a>
+      </nav>
+    </div>
+  </header>
+  <main id="main" class="shell">
+    <header class="intro">
+      <p class="eyebrow">Credit portfolio risk</p>
+      <h1>How much does model choice change tail risk?</h1>
+      <p class="lede">Compare Gaussian and Student-t loss estimates after matching single-name and pair-default probabilities. Then put 10% of the portfolio in one name and see what changes.</p>
+    </header>
+    <p id="load-status" role="status">Loading the dashboard data…</p>
+    <noscript><p>This dashboard needs JavaScript. The <a href="../reports/sensitivity.md">technical report</a> contains the underlying results.</p></noscript>
+
+    <div id="dashboard" hidden>
+      <div id="overview" class="overview" aria-label="Starting calibrations"></div>
+      <p class="note headline-note" id="headline-note"></p>
+
+      <section id="feasibility" class="panel">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Default-pair matching</p>
+            <h2>Can the Student-t model match?</h2>
+            <p>The shared scale clusters defaults even at zero latent correlation. A match exists when the target reaches that minimum.</p>
+          </div>
+          <a class="method" href="../reports/research_design.md#dependence-and-calibration">How it’s computed</a>
+        </div>
+        <div class="segments" id="floor-cases" aria-label="Pair-default target"></div>
+        <div class="chart-layout">
+          <figure class="floor-figure">
+            <div class="chart-legend">
+              <span><i class="swatch curve"></i> Student-t floor</span>
+              <span><i class="swatch target"></i> Gaussian pair target</span>
+              <span><i class="swatch marker"></i> Selected ν</span>
+              <span id="crossing-legend"><i class="swatch band"></i> 95% crossing interval</span>
+            </div>
+            <p class="chart-label">Probability of a pair defaulting</p>
+            <div class="plot-wrap"><canvas id="floor-chart" role="img" aria-label="Student-t minimum pair-default probability and Gaussian pair-default target"></canvas></div>
+            <figcaption>Student-t degrees of freedom (log scale)</figcaption>
+          </figure>
+          <div class="inset">
+            <label for="floor-df">Student-t degrees of freedom</label>
+            <select id="floor-df"></select>
+            <div id="floor-readout" aria-live="polite"></div>
+          </div>
+        </div>
+        <details>
+          <summary>Feasible degrees of freedom at GEMs inputs</summary>
+          <div id="gems-range"></div>
+        </details>
+      </section>
+
+      <section id="calibration" class="panel">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Controlled comparisons</p>
+            <h2>Swap the calibration</h2>
+            <p>Choose the synthetic or GEMs value for each input. Each combination was calculated directly.</p>
+          </div>
+          <a class="method" href="../reports/sensitivity.md#holding-latent-correlation-fixed-or-matching-default-pairs">How it’s computed</a>
+        </div>
+        <div class="toolbar">
+          <div id="swap-presets" class="segments" aria-label="Load a complete calibration">
+            <button type="button" data-key="0000">Load synthetic</button>
+            <button type="button" data-key="1111">Load GEMs</button>
+          </div>
+          <label class="mode">Comparison
+            <select id="swap-mode">
+              <option value="matched">Match default pairs</option>
+              <option value="fixed">Hold latent correlation fixed</option>
+            </select>
+          </label>
+        </div>
+        <div id="swap-controls" class="swaps"></div>
+        <div id="swap-results" class="inset swap-results" aria-live="polite"></div>
+        <div class="one-input">
+          <h3>One input at a time from the synthetic baseline</h3>
+          <p class="note">Each row uses the GEMs value for one input. The other inputs stay at their synthetic values. All rows use pair-default matching.</p>
+          <div id="one-input-results" class="table-box"></div>
+          <p id="lgd-note" class="note"></p>
+        </div>
+      </section>
+
+      <section id="concentration" class="panel">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Exposure allocation</p>
+            <h2>What changes when one name holds 10%?</h2>
+            <p>Compare 1,000 equal names with a book that gives 10% to one name and splits the rest equally. PD, LGD and total exposure stay fixed within each calibration.</p>
+          </div>
+          <a class="method" href="../reports/sensitivity.md#what-this-means-for-capital-planning">How it’s computed</a>
+        </div>
+        <div id="concentration-measures" class="segments" aria-label="Tail risk measure"></div>
+        <div class="concentration-grid" id="concentration-results" aria-live="polite"></div>
+        <p id="concentration-tail" class="note"></p>
+        <p class="note">Expected loss stays equal across the two allocations, so the increase in VaR is also the increase in VaR minus expected loss. Compare the increment with an available capital buffer.</p>
+      </section>
+
+      <section class="panel supporting" id="evidence">
+        <h2>Evidence and further experiments</h2>
+        <details>
+          <summary>GEMs bootstrap and simulation checks</summary>
+          <div class="chart-layout evidence-grid">
+            <figure>
+              <p class="chart-label">Student-t floor</p>
+              <div class="plot-wrap scatter-wrap"><canvas id="bootstrap-chart" role="img" aria-label="Bootstrap scatter of the Student-t floor versus observed pair-default frequency"></canvas></div>
+              <figcaption>Estimated pair-default probability</figcaption>
+            </figure>
+            <div id="bootstrap-summary"></div>
+          </div>
+        </details>
+        <details>
+          <summary>Persistence, reverse stress testing and borrower mix</summary>
+          <ul>
+            <li><a href="../reports/persistence_design.md">Default rates after an unusually bad year</a></li>
+            <li><a href="../reports/validation_power.md">Power to detect persistent credit stress</a></li>
+            <li><a href="../reports/reverse_stress.md">Reverse stress triggers for a portfolio risk limit</a></li>
+            <li><a href="../reports/borrower_mix.md">Distinguishing a change in borrower mix from a change in the credit cycle</a></li>
+          </ul>
+        </details>
+      </section>
+    </div>
+    <footer><a href="../README.md">Project README</a><a href="../references.md">Data and references</a><a href="data.json">Dashboard data (JSON)</a></footer>
+  </main>
+</body>
+</html>
